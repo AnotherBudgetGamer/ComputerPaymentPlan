@@ -158,6 +158,31 @@
         // Track additional payments
         let additionalPayments = [];
         let currentTotalBalance = 500;
+        let paymentsData = {}; // To store paid status and notes for each payment
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('additionalPayments', JSON.stringify(additionalPayments));
+            localStorage.setItem('currentTotalBalance', currentTotalBalance);
+            localStorage.setItem('paymentsData', JSON.stringify(paymentsData));
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const savedAdditionalPayments = localStorage.getItem('additionalPayments');
+            const savedCurrentTotalBalance = localStorage.getItem('currentTotalBalance');
+            const savedPaymentsData = localStorage.getItem('paymentsData');
+
+            if (savedAdditionalPayments) {
+                additionalPayments = JSON.parse(savedAdditionalPayments);
+            }
+            if (savedCurrentTotalBalance) {
+                currentTotalBalance = parseFloat(savedCurrentTotalBalance);
+            }
+            if (savedPaymentsData) {
+                paymentsData = JSON.parse(savedPaymentsData);
+            }
+        }
         
         // Generate payment schedule
         function generatePaymentSchedule() {
@@ -189,19 +214,30 @@
                 
                 const formattedDate = `${months[paymentDate.getMonth()]} 10, ${paymentDate.getFullYear()}`;
                 
+                const paymentId = `payment-${paymentNum}`;
+                const isPaid = paymentsData[paymentId] ? paymentsData[paymentId].isPaid : false;
+                const notes = paymentsData[paymentId] ? paymentsData[paymentId].notes : '';
+
                 row.innerHTML = `
                     <td>${paymentNum}</td>
                     <td>${formattedDate}</td>
                     <td class="amount">${paymentAmount.toFixed(2)}</td>
                     <td style="text-align: center;">
-                        <input type="checkbox" class="paid-checkbox" onchange="updateBalance(this, ${paymentNum})">
+                        <input type="checkbox" class="paid-checkbox" id="${paymentId}" onchange="updateBalance(this, ${paymentNum})" ${isPaid ? 'checked' : ''}>
                     </td>
                     <td class="amount" id="balance-${paymentNum}">${remainingBalance.toFixed(2)}</td>
                     <td>
-                        <input type="text" class="notes-input" placeholder="Add notes...">
+                        <input type="text" class="notes-input" id="notes-${paymentId}" placeholder="Add notes..." value="${notes}" onchange="updateNotes(this, ${paymentNum})">
                     </td>
                 `;
                 
+                // Apply styling if already paid
+                if (isPaid) {
+                    row.style.backgroundColor = '#d4edda';
+                    row.style.textDecoration = 'line-through';
+                    row.style.opacity = '0.7';
+                }
+
                 // Add total row styling for the last payment
                 if (remainingBalance === 0) {
                     row.classList.add('total-row');
@@ -217,6 +253,13 @@
         
         function updateBalance(checkbox, paymentNum) {
             const row = checkbox.closest('tr');
+            const paymentId = `payment-${paymentNum}`;
+            
+            if (!paymentsData[paymentId]) {
+                paymentsData[paymentId] = { isPaid: false, notes: '' };
+            }
+            paymentsData[paymentId].isPaid = checkbox.checked;
+
             if (checkbox.checked) {
                 row.style.backgroundColor = '#d4edda';
                 row.style.textDecoration = 'line-through';
@@ -226,6 +269,16 @@
                 row.style.textDecoration = '';
                 row.style.opacity = '';
             }
+            saveData();
+        }
+
+        function updateNotes(input, paymentNum) {
+            const paymentId = `payment-${paymentNum}`;
+            if (!paymentsData[paymentId]) {
+                paymentsData[paymentId] = { isPaid: false, notes: '' };
+            }
+            paymentsData[paymentId].notes = input.value;
+            saveData();
         }
         
         function addAdditionalPayment() {
@@ -270,6 +323,7 @@
             document.getElementById('additionalAmount').value = '';
             document.getElementById('additionalDate').value = '';
             document.getElementById('additionalNote').value = '';
+            saveData();
         }
         
         function removeAdditionalPayment(paymentId) {
@@ -282,6 +336,7 @@
                 updateSummary();
                 displayAdditionalPayments();
                 regeneratePaymentSchedule();
+                saveData();
             }
         }
         
@@ -320,8 +375,10 @@
         }
         
         // Initialize
+        loadData();
         generatePaymentSchedule();
         updateSummary();
+        displayAdditionalPayments();
     </script>
 </body>
 </html>
