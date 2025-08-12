@@ -1,7 +1,8 @@
         // Static data (no APIs)
         let currentTotalBalance = 500;
         let paymentsData = {
-            'payment-1': { isPaid: true, notes: 'Payment for work' }
+            'payment-1': { isPaid: true, notes: 'Payment for work' },
+            'payment-2': { isPaid: true, notes: '' }
         };
         let additionalPayments = [
             { id: 1, date: '2025-08-12', amount: 5, note: 'Additional $5 payment made on principle' }
@@ -110,18 +111,19 @@
                 paymentsContainer.appendChild(paymentDiv);
             }
 
-            // Render subtotal for upcoming (excluding current), subtracting additional payments
-            const upcomingRawTotal = upcomingPaymentsRest.reduce((sum, p) => sum + p.amount, 0);
+            // Render subtotal for upcoming (including current if present), subtracting additional payments
+            const upcomingAll = currentPayment ? [currentPayment, ...upcomingPaymentsRest] : upcomingPaymentsRest;
+            const upcomingRawTotal = upcomingAll.reduce((sum, p) => sum + p.amount, 0);
             const additionalTotal = additionalPayments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
             const subtotalAmount = Math.max(0, upcomingRawTotal - additionalTotal);
-            const nextDue = upcomingPaymentsRest[0]?.date;
-            if (upcomingPaymentsRest.length > 0) {
+            const nextDue = currentPayment ? currentPayment.date : upcomingPaymentsRest[0]?.date;
+            if (upcomingAll.length > 0) {
                 const subtotalDiv = document.createElement('div');
                 subtotalDiv.classList.add('subtotal');
                 const nextDueText = `${months[nextDue.getMonth()]} 10, ${nextDue.getFullYear()}`;
                 subtotalDiv.innerHTML = `
                     <div class="subtotal-row">
-                        <span><strong>Upcoming payments subtotal</strong> (${upcomingPaymentsRest.length} payments, next due ${nextDueText})</span>
+                        <span><strong>Upcoming payments subtotal</strong> (${upcomingAll.length} payments, next due ${nextDueText})</span>
                         <span class="amount" id="upcomingSubtotalAmount">${subtotalAmount.toFixed(2)}</span>
                     </div>`;
                 paymentsContainer.appendChild(subtotalDiv);
