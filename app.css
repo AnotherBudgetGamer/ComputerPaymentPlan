@@ -140,9 +140,24 @@ body {
         }
         .additional-row {
             display: grid;
-            grid-template-columns: 140px 1fr 1.5fr;
+            grid-template-columns: minmax(0, 110px) minmax(0, 1fr) minmax(0, 1fr);
             gap: 10px;
             align-items: center;
+        }
+        .additional-section, .additional-row, .additional-date, .additional-amount, .additional-note {
+            box-sizing: border-box;
+        }
+        .additional-date, .additional-amount, .additional-note {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        @media (max-width: 600px) {
+            .additional-row {
+                grid-template-columns: 1fr;
+                gap: 6px;
+                align-items: start;
+            }
         }
         /* Inputs removed; section is display-only */
 
