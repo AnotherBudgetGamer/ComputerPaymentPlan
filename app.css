@@ -65,29 +65,7 @@ body {
             background: transparent;
             padding: 4px;
         }
-        .additional-payment-section {
-            background: #f0f8ff;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            border: 1px solid #4a90e2;
-        }
-        .additional-payment-section h3 {
-            margin-top: 0;
-            color: #2c5282;
-        }
-        .remove-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
-        .remove-btn:hover {
-            background: #c82333;
-        }
+        /* Removed additional payment UI styles for static page */
 
         /* Collapsible Payment Items */
         .payment-item {
@@ -128,6 +106,46 @@ body {
             margin-bottom: 0;
         }
 
+        /* Subtotal block */
+        .subtotal {
+            background: #fff7e6;
+            border: 1px solid #ffd591;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin-top: 16px;
+        }
+        .subtotal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        /* Additional payments section */
+        .additional-section {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 5px;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+        .additional-section h3 {
+            margin: 0 0 8px 0;
+            color: #237804;
+        }
+        .additional-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .additional-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 1.5fr;
+            gap: 10px;
+            align-items: center;
+        }
+        /* Inputs removed; section is display-only */
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .container {
@@ -135,48 +153,7 @@ body {
                 padding: 15px;
             }
 
-            /* Hide table specific styles as we are using divs now */
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-
-            thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
-
-            tr {
-                border: 1px solid #ccc;
-                margin-bottom: 10px;
-            }
-
-            td {
-                border: none;
-                border-bottom: 1px solid #eee;
-                position: relative;
-                padding-left: 50%;
-                text-align: right;
-            }
-
-            td:before {
-                position: absolute;
-                top: 6px;
-                left: 6px;
-                width: 45%;
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: bold;
-            }
-
-            /* Label the data */
-            td:nth-of-type(1):before { content: "Payment #"; }
-            td:nth-of-type(2):before { content: "Due Date"; }
-            td:nth-of-type(3):before { content: "Amount"; }
-            td:nth-of-type(4):before { content: "Paid"; }
-            td:nth-of-type(5):before { content: "Balance Remaining"; }
-            td:nth-of-type(6):before { content: "Notes"; }
+            /* Removed table-to-card responsive overrides as table UI is gone */
 
             .additional-payment-section div {
                 flex-direction: column;

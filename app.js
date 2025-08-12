@@ -1,111 +1,163 @@
-        // Track additional payments
-        let additionalPayments = [];
+        // Static data (no APIs)
         let currentTotalBalance = 500;
-        let paymentsData = {}; // To store paid status and notes for each payment
+        let paymentsData = {
+            'payment-1': { isPaid: true, notes: 'Payment for work' }
+        };
+        let additionalPayments = [
+            { id: 1, date: '2025-08-12', amount: 5, note: 'Additional $5 payment made on principle' }
+        ];
 
-        // Save data to localStorage
-        function saveData() {
-            localStorage.setItem('additionalPayments', JSON.stringify(additionalPayments));
-            localStorage.setItem('currentTotalBalance', currentTotalBalance);
-            localStorage.setItem('paymentsData', JSON.stringify(paymentsData));
-        }
-
-        // Load data from localStorage
-        function loadData() {
-            const savedAdditionalPayments = localStorage.getItem('additionalPayments');
-            const savedCurrentTotalBalance = localStorage.getItem('currentTotalBalance');
-            const savedPaymentsData = localStorage.getItem('paymentsData');
-
-            if (savedAdditionalPayments) {
-                additionalPayments = JSON.parse(savedAdditionalPayments);
-            }
-            if (savedCurrentTotalBalance) {
-                currentTotalBalance = parseFloat(savedCurrentTotalBalance);
-            }
-            if (savedPaymentsData) {
-                paymentsData = JSON.parse(savedPaymentsData);
-            }
-        }
-        
-        // Generate payment schedule
+        // Generate payment schedule (show only past payments and subtotal for active+future)
         function generatePaymentSchedule() {
             const paymentsContainer = document.getElementById('paymentsContainer');
             const monthlyPayment = 20;
-            
-            // Clear existing payments
             paymentsContainer.innerHTML = '';
-            
-            // Starting from current month
-            const currentDate = new Date();
-            let paymentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 10);
-            
-            // If we're past the 10th of current month, start next month
-            if (currentDate.getDate() > 10) {
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-            }
-            
+
+            // Build full schedule
+            const now = new Date();
+            let paymentDate = new Date(now.getFullYear(), 6, 10); // July 10 of current year
             let paymentNum = 1;
             let remainingBalance = currentTotalBalance;
-            let firstUnpaidPaymentId = null;
+            const schedule = [];
 
             while (remainingBalance > 0) {
                 const paymentAmount = Math.min(monthlyPayment, remainingBalance);
-                remainingBalance -= paymentAmount;
-                
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                
-                const formattedDate = `${months[paymentDate.getMonth()]} 10, ${paymentDate.getFullYear()}`;
-                
+                const balanceAfter = remainingBalance - paymentAmount;
                 const paymentId = `payment-${paymentNum}`;
                 const isPaid = paymentsData[paymentId] ? paymentsData[paymentId].isPaid : false;
                 const notes = paymentsData[paymentId] ? paymentsData[paymentId].notes : '';
 
-                if (!isPaid && !firstUnpaidPaymentId) {
-                    firstUnpaidPaymentId = paymentId;
-                }
+                schedule.push({
+                    paymentNum,
+                    date: new Date(paymentDate.getTime()),
+                    amount: paymentAmount,
+                    balanceAfter,
+                    paymentId,
+                    isPaid,
+                    notes
+                });
 
+                // Next month
+                paymentDate.setMonth(paymentDate.getMonth() + 1);
+                remainingBalance = balanceAfter;
+                paymentNum += 1;
+            }
+
+            // Determine active month = first payment with date >= today
+            const activeIndex = schedule.findIndex(p => p.date >= new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+            const pastPayments = activeIndex === -1 ? schedule : schedule.slice(0, activeIndex);
+            const currentPayment = activeIndex === -1 ? null : schedule[activeIndex];
+            const upcomingPaymentsRest = activeIndex === -1 ? [] : schedule.slice(activeIndex + 1);
+
+            // Render past payments
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            pastPayments.forEach(p => {
+                const formattedDate = `${months[p.date.getMonth()]} 10, ${p.date.getFullYear()}`;
                 const paymentDiv = document.createElement('div');
                 paymentDiv.classList.add('payment-item');
-                if (isPaid) {
-                    paymentDiv.classList.add('paid');
-                }
-                paymentDiv.id = `payment-item-${paymentNum}`;
-
+                if (p.isPaid) paymentDiv.classList.add('paid');
+                paymentDiv.id = `payment-item-${p.paymentNum}`;
                 paymentDiv.innerHTML = `
-                    <div class="payment-header" onclick="togglePaymentDetails(${paymentNum})">
-                        <span>Payment #${paymentNum}</span>
-                        <span class="amount">Balance: ${remainingBalance.toFixed(2)}</span>
+                    <div class="payment-header" onclick="togglePaymentDetails(${p.paymentNum})">
+                        <span>Payment #${p.paymentNum}</span>
+                        <span class="amount">Balance: ${p.balanceAfter.toFixed(2)}</span>
                     </div>
                     <div class="payment-details">
                         <p><strong>Due Date:</strong> ${formattedDate}</p>
-                        <p><strong>Amount:</strong> ${paymentAmount.toFixed(2)}</p>
+                        <p><strong>Amount:</strong> ${p.amount.toFixed(2)}</p>
                         <p>
-                            <strong>Paid:</strong> 
-                            <input type="checkbox" class="paid-checkbox" id="${paymentId}" onchange="updateBalance(this, ${paymentNum})" ${isPaid ? 'checked' : ''}>
+                            <strong>Paid:</strong>
+                            <input type="checkbox" class="paid-checkbox" id="${p.paymentId}" onchange="updateBalance(this, ${p.paymentNum})" ${p.isPaid ? 'checked' : ''}>
                         </p>
                         <p>
-                            <strong>Notes:</strong> 
-                            <input type="text" class="notes-input" id="notes-${paymentId}" placeholder="Add notes..." value="${notes}" onchange="updateNotes(this, ${paymentNum})">
+                            <strong>Notes:</strong>
+                            <input type="text" class="notes-input" id="notes-${p.paymentId}" placeholder="Add notes..." value="${p.notes}" onchange="updateNotes(this, ${p.paymentNum})">
                         </p>
                     </div>
                 `;
-                
                 paymentsContainer.appendChild(paymentDiv);
-                
-                // Move to next month
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-                paymentNum++;
+            });
+
+            // Render Additional Payments section (between past and current)
+            renderAdditionalPaymentsSection(paymentsContainer);
+
+            // Render current payment (single)
+            if (currentPayment) {
+                const formattedDate = `${months[currentPayment.date.getMonth()]} 10, ${currentPayment.date.getFullYear()}`;
+                const cp = currentPayment;
+                const paymentDiv = document.createElement('div');
+                paymentDiv.classList.add('payment-item');
+                if (cp.isPaid) paymentDiv.classList.add('paid');
+                paymentDiv.id = `payment-item-${cp.paymentNum}`;
+                paymentDiv.innerHTML = `
+                    <div class="payment-header" onclick="togglePaymentDetails(${cp.paymentNum})">
+                        <span>Current Payment #${cp.paymentNum}</span>
+                        <span class="amount">Balance: ${cp.balanceAfter.toFixed(2)}</span>
+                    </div>
+                    <div class="payment-details">
+                        <p><strong>Due Date:</strong> ${formattedDate}</p>
+                        <p><strong>Amount:</strong> ${cp.amount.toFixed(2)}</p>
+                        <p>
+                            <strong>Paid:</strong>
+                            <input type="checkbox" class="paid-checkbox" id="${cp.paymentId}" onchange="updateBalance(this, ${cp.paymentNum})" ${cp.isPaid ? 'checked' : ''}>
+                        </p>
+                        <p>
+                            <strong>Notes:</strong>
+                            <input type="text" class="notes-input" id="notes-${cp.paymentId}" placeholder="Add notes..." value="${cp.notes}" onchange="updateNotes(this, ${cp.paymentNum})">
+                        </p>
+                    </div>
+                `;
+                paymentsContainer.appendChild(paymentDiv);
             }
 
-            // Expand the first unpaid payment and scroll into view
-            if (firstUnpaidPaymentId) {
-                const firstUnpaidElement = document.getElementById(`payment-item-${firstUnpaidPaymentId.split('-')[1]}`);
-                if (firstUnpaidElement) {
-                    firstUnpaidElement.querySelector('.payment-details').style.display = 'block';
-                    firstUnpaidElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+            // Render subtotal for upcoming (excluding current), subtracting additional payments
+            const upcomingRawTotal = upcomingPaymentsRest.reduce((sum, p) => sum + p.amount, 0);
+            const additionalTotal = additionalPayments.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+            const subtotalAmount = Math.max(0, upcomingRawTotal - additionalTotal);
+            const nextDue = upcomingPaymentsRest[0]?.date;
+            if (upcomingPaymentsRest.length > 0) {
+                const subtotalDiv = document.createElement('div');
+                subtotalDiv.classList.add('subtotal');
+                const nextDueText = `${months[nextDue.getMonth()]} 10, ${nextDue.getFullYear()}`;
+                subtotalDiv.innerHTML = `
+                    <div class="subtotal-row">
+                        <span><strong>Upcoming payments subtotal</strong> (${upcomingPaymentsRest.length} payments, next due ${nextDueText})</span>
+                        <span class="amount" id="upcomingSubtotalAmount">${subtotalAmount.toFixed(2)}</span>
+                    </div>`;
+                paymentsContainer.appendChild(subtotalDiv);
             }
+
+            // Update the summary current balance to match subtotal
+            const currentBalanceElem = document.getElementById('currentBalance');
+            if (currentBalanceElem) {
+                currentBalanceElem.textContent = subtotalAmount.toFixed(2);
+            }
+        }
+
+        function renderAdditionalPaymentsSection(container) {
+            const section = document.createElement('div');
+            section.classList.add('additional-section');
+            section.innerHTML = `<h3>Additional payments</h3>`;
+
+            const list = document.createElement('div');
+            list.classList.add('additional-list');
+
+            additionalPayments.forEach((entry) => {
+                const row = document.createElement('div');
+                row.classList.add('additional-row');
+                const date = new Date(entry.date);
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dateText = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+                row.innerHTML = `
+                    <div class="additional-date">${dateText}</div>
+                    <div class="additional-amount"><strong>Subtract:</strong> $${Number(entry.amount).toFixed(2)}</div>
+                    <div class="additional-note"><strong>Note:</strong> ${entry.note || ''}</div>
+                `;
+                list.appendChild(row);
+            });
+
+            section.appendChild(list);
+            container.appendChild(section);
         }
         
         function togglePaymentDetails(paymentNum) {
@@ -132,7 +184,7 @@
             } else {
                 paymentItem.classList.remove('paid');
             }
-            saveData();
+            // No persistence on static page
         }
 
         function updateNotes(input, paymentNum) {
@@ -141,104 +193,10 @@
                 paymentsData[paymentId] = { isPaid: false, notes: '' };
             }
             paymentsData[paymentId].notes = input.value;
-            saveData();
+            // No persistence on static page
         }
         
-        function addAdditionalPayment() {
-            const amount = parseFloat(document.getElementById('additionalAmount').value);
-            const date = document.getElementById('additionalDate').value;
-            const note = document.getElementById('additionalNote').value;
-            
-            if (!amount || amount <= 0) {
-                alert('Please enter a valid payment amount.');
-                return;
-            }
-            
-            if (amount > currentTotalBalance) {
-                alert('Payment amount cannot exceed the current balance.');
-                return;
-            }
-            
-            if (!date) {
-                alert('Please select a payment date.');
-                return;
-            }
-            
-            // Add to additional payments array
-            const payment = {
-                id: Date.now(),
-                amount: amount,
-                date: date,
-                note: note || 'Additional payment'
-            };
-            
-            additionalPayments.push(payment);
-            
-            // Update current balance
-            currentTotalBalance -= amount;
-            
-            // Update display
-            updateSummary();
-            displayAdditionalPayments();
-            regeneratePaymentSchedule();
-            
-            // Clear form
-            document.getElementById('additionalAmount').value = '';
-            document.getElementById('additionalDate').value = '';
-            document.getElementById('additionalNote').value = '';
-            saveData();
-        }
-        
-        function removeAdditionalPayment(paymentId) {
-            const paymentIndex = additionalPayments.findIndex(p => p.id === paymentId);
-            if (paymentIndex !== -1) {
-                const payment = additionalPayments[paymentIndex];
-                currentTotalBalance += payment.amount;
-                additionalPayments.splice(paymentIndex, 1);
-                
-                updateSummary();
-                displayAdditionalPayments();
-                regeneratePaymentSchedule();
-                saveData();
-            }
-        }
-        
-        function updateSummary() {
-            const additionalTotal = additionalPayments.reduce((sum, payment) => sum + payment.amount, 0);
-            document.getElementById('additionalTotal').textContent = additionalTotal.toFixed(2);
-            document.getElementById('currentBalance').textContent = currentTotalBalance.toFixed(2);
-        }
-        
-        function displayAdditionalPayments() {
-            const logDiv = document.getElementById('additionalPaymentsLog');
-            const listBody = document.getElementById('additionalPaymentsList');
-            
-            if (additionalPayments.length === 0) {
-                logDiv.style.display = 'none';
-                return;
-            }
-            
-            logDiv.style.display = 'block';
-            listBody.innerHTML = '';
-            
-            additionalPayments.forEach(payment => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${new Date(payment.date).toLocaleDateString()}</td>
-                    <td class="amount">${payment.amount.toFixed(2)}</td>
-                    <td>${payment.note}</td>
-                    <td><button class="remove-btn" onclick="removeAdditionalPayment(${payment.id})">Remove</button></td>
-                `;
-                listBody.appendChild(row);
-            });
-        }
-        
-        function regeneratePaymentSchedule() {
+        // Initialize (static)
+        (function init() {
             generatePaymentSchedule();
-        }
-        
-        // Initialize
-        loadData();
-        generatePaymentSchedule();
-        updateSummary();
-        displayAdditionalPayments();
+        })();
