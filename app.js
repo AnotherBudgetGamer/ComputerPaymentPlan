@@ -1,9 +1,15 @@
-        // Static data (no APIs)
         let currentTotalBalance = 500;
+        
+        // Add Payments To Show Being Made
+        
         let paymentsData = {
             'payment-1': { isPaid: true, notes: 'Payment for work' },
-            'payment-2': { isPaid: true, notes: '' }
+            'payment-2': { isPaid: true, notes: '' },
+            'payment-3': { isPaid: true, notes: 'Sent to BoA' },
+            'payment-4': { isPaid: true, notes: 'Sent to BoA' },
         };
+
+        // Add Additional Payments
         let additionalPayments = [
             { id: 1, date: '2025-08-12', amount: 5, note: 'Additional $5 payment made on principle' }
         ];
