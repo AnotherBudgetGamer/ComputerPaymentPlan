@@ -5,8 +5,9 @@
         let paymentsData = {
             'payment-1': { isPaid: true, notes: 'Payment for work' },
             'payment-2': { isPaid: true, notes: '' },
-            'payment-3': { isPaid: true, notes: 'Sent to BoA' },
-            'payment-4': { isPaid: true, notes: 'Sent to BoA' },
+            'payment-3': { isPaid: true, notes: 'Sent to Mom BoA' },
+            'payment-4': { isPaid: true, notes: 'Sent to Mom BoA' },
+            'payment-5': { isPaid: true, notes: 'Sent to Mom BoA'}
         };
 
         // Add Additional Payments
